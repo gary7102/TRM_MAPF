@@ -7,25 +7,29 @@
 ```
 python scripts/01_prepare_instances.py  \
 --scen data/scen/maze-128-128-1-random-1.scen \
---out_dir data/instances \  
---map_filter maze-128-128-1.map \ 
+--out_dir data/instances \
+--map_filter maze-128-128-1.map \
 --num_instances 50   \
---num_agents 100 \  
+--num_agents 50 \
 --seed 42 \
--unique_goal \
+--unique_goal \
 --unique_pair
 ```
 
 2. **Run pypibt for each instance**
-
+記得修改02_run_pypibt_collect.py 中的--menifest and --runs_dir
 ```
 python scripts/02_run_pypibt_collect.py \
 --timeout 120 \
 --use_uv \
 --max_instances 50 \
---manifest path_to_.map_file \
---runs_dir output_dir
 ```
+
+3. **彙總成 map-level 的 $P_{raw}$**
+```
+python scripts/03_aggregate_p_raw.py --map_name random-32-32-10.map --only_solved --alpha 1 --beta 1 --out_dir outputs/p_raw_C_combo
+```
+
 ---
 '''
 TRM_MAPF/

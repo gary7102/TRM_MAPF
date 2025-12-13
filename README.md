@@ -1,14 +1,31 @@
-# Usage
-'python -m venv .venv && source .venv/bin/activate'
-1. Create instances
-'''
-python scripts/01_prepare_instances.py   --scen data/scen/maze-128-128-1-random-1.scen   --out_dir data/instances   --map_filter maze-128-128-1.map   --num_instances 50   --num_agents 100   --seed 42 --unique_goal --unique_pair
-'''
-2. Run pypibt for each instance
-'''
-python scripts/02_run_pypibt_collect.py   --timeout 120   --use_uv   --max_instances 50 --manifest path_to_.map_file --runs_dir output_dir
-'''
 
+
+# Usage
+`python -m venv .venv && source .venv/bin/activate`
+
+1. **Create instances**
+```
+python scripts/01_prepare_instances.py  \
+--scen data/scen/maze-128-128-1-random-1.scen \
+--out_dir data/instances \  
+--map_filter maze-128-128-1.map \ 
+--num_instances 50   \
+--num_agents 100 \  
+--seed 42 \
+-unique_goal \
+--unique_pair
+```
+
+2. **Run pypibt for each instance**
+
+```
+python scripts/02_run_pypibt_collect.py \
+--timeout 120 \
+--use_uv \
+--max_instances 50 \
+--manifest path_to_.map_file \
+--runs_dir output_dir
+```
 ---
 '''
 TRM_MAPF/

@@ -1,6 +1,6 @@
 [submodule "third_party/pypibt"]
-	path = third_party/pypibt
+	path = external/pypibt
 	url = https://github.com/Kei18/pypibt.git
 [submodule "third_party/mapf-visualizer"]
-	path = third_party/mapf-visualizer
+	path = external/mapf-visualizer
 	url = https://github.com/Kei18/mapf-visualizer.git

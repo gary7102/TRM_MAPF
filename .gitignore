@@ -1,0 +1,7 @@
+.venv/*
+
+data/
+runs/
+src/__pycache__/
+src/praw/__pycache__/
+mapf-visualizer

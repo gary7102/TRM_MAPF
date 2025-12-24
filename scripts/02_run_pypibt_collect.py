@@ -70,11 +70,11 @@ def _run_cmd(
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--manifest", type=str, default="data/instances/random-32-32-10.map/instances_manifest.jsonl")
+    ap.add_argument("--manifest", type=str, default="data/instances/trap-32-32.map/instances_manifest.jsonl")
     ap.add_argument("--maps_root", type=str, default="data/maps")
     ap.add_argument("--pypibt_app", type=str, default="external/pypibt/app.py")
     ap.add_argument("--python", type=str, default=sys.executable, help="Python executable to run pypibt (default: current).")
-    ap.add_argument("--runs_dir", type=str, default="runs/pypibt/random-32-32-10.map")
+    ap.add_argument("--runs_dir", type=str, default="runs/pypibt/trap-32-32.map")
     ap.add_argument("--out_dir", type=str, default="data/p_raw")
     ap.add_argument("--timeout", type=int, default=120, help="Per-instance solver timeout (seconds).")
     ap.add_argument("--max_instances", type=int, default=0, help="0 means no limit.")

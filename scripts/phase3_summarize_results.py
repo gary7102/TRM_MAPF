@@ -390,7 +390,25 @@ def aggregate_stats(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     return stats
 
 
-def write_html(outp: Path, rows: List[Dict[str, Any]], stats: Dict[str, Any]) -> None:
+def _infer_map_name(root: Path) -> str:
+    if root.is_file() and root.suffix == ".map":
+        return root.name
+    for part in root.parts:
+        if part.endswith(".map"):
+            return part
+    return root.name
+
+
+def _infer_lambda(root: Path) -> Optional[str]:
+    for part in root.parts:
+        m = re.search(r"lambda[_-]?([0-9]+(?:\.[0-9]+)?)", part)
+        if m:
+            return m.group(1)
+    return None
+
+
+def write_html(outp: Path, rows: List[Dict[str, Any]], stats: Dict[str, Any],
+               map_name: str, lambda_value: str, top_n: int) -> None:
     def esc(v: Any) -> str:
         return html.escape(fmt(v))
 
@@ -418,6 +436,16 @@ def write_html(outp: Path, rows: List[Dict[str, Any]], stats: Dict[str, Any]) ->
         ("makespan_gap", "mk_gap", "lower"),
         ("sum_of_loss", "sum_of_loss", "lower"),
     ]
+
+    def difficulty_key(r: Dict[str, Any]) -> float:
+        v = num(r.get("base_search_iteration", ""))
+        if v is None:
+            v = num(r.get("heat_search_iteration", ""))
+        return v if v is not None else float("-inf")
+
+    rows_sorted = sorted(rows, key=difficulty_key, reverse=True)
+    if top_n > 0:
+        rows_sorted = rows_sorted[:min(top_n, len(rows_sorted))]
 
     lines: List[str] = []
     lines.append("<!doctype html>")
@@ -471,8 +499,11 @@ def write_html(outp: Path, rows: List[Dict[str, Any]], stats: Dict[str, Any]) ->
     lines.append("  </style>")
     lines.append("</head>")
     lines.append("<body>")
-    lines.append("  <h1>Phase 3 Summary</h1>")
-    lines.append("  <small>Each cell: base / heat / delta (signed change)</small>")
+    lines.append(f"  <h1>Phase 3 Summary: {esc(map_name)}, lambda={esc(lambda_value)}</h1>")
+    subtitle = "Each cell: base / heat / delta (signed change)"
+    if top_n > 0:
+        subtitle += f"; showing top {top_n} by base_search_iteration"
+    lines.append(f"  <small>{esc(subtitle)}</small>")
 
     lines.append("  <section>")
     lines.append("    <div class=\"table-wrap\">")
@@ -483,7 +514,24 @@ def write_html(outp: Path, rows: List[Dict[str, Any]], stats: Dict[str, Any]) ->
         lines.append(f"          <th>{esc(label)}</th>")
     lines.append("        </tr></thead>")
     lines.append("        <tbody>")
-    for r in rows:
+    avg_row: Dict[str, Any] = {"instance_id": f"AVG({len(rows_sorted)})"}
+    for key, _, _ in metrics:
+        base_key = f"base_{key}"
+        heat_key = f"heat_{key}"
+        base_vals = []
+        heat_vals = []
+        for r in rows_sorted:
+            bv = num(r.get(base_key, ""))
+            hv = num(r.get(heat_key, ""))
+            if bv is not None:
+                base_vals.append(bv)
+            if hv is not None:
+                heat_vals.append(hv)
+        avg_row[base_key] = sum(base_vals) / len(base_vals) if base_vals else ""
+        avg_row[heat_key] = sum(heat_vals) / len(heat_vals) if heat_vals else ""
+
+    rows_with_avg = [avg_row] + rows_sorted
+    for r in rows_with_avg:
         lines.append("          <tr>")
         lines.append(f"            <td class=\"id\">{esc(r.get('instance_id',''))}</td>")
         for key, _, better in metrics:
@@ -547,6 +595,12 @@ def main() -> int:
                     help="Write JSON summary to this path (optional).")
     ap.add_argument("--out_html", type=str, default="",
                     help="Write HTML summary to this path (optional).")
+    ap.add_argument("--html_top_n", type=int, default=0,
+                    help="Limit HTML to top N hardest instances by base_search_iteration.")
+    ap.add_argument("--map_name", type=str, default="",
+                    help="Map name for HTML title (optional).")
+    ap.add_argument("--lambda", dest="lambda_value", type=str, default="",
+                    help="Heatmap lambda for HTML title (optional).")
     ap.add_argument("--require_pair", action="store_true",
                     help="Only include instances that have BOTH baseline and heatmap.")
     args = ap.parse_args()
@@ -664,7 +718,9 @@ def main() -> int:
     # write html
     if args.out_html:
         outp = Path(args.out_html)
-        write_html(outp, rows, stats)
+        map_name = args.map_name or _infer_map_name(root)
+        lambda_value = args.lambda_value or _infer_lambda(outp) or _infer_lambda(root) or "unknown"
+        write_html(outp, rows, stats, map_name, lambda_value, args.html_top_n)
         print(f"\n[ok] wrote HTML: {outp}")
 
     return 0
